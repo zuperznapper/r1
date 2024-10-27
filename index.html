@@ -42,6 +42,7 @@
         <p id="remaining"></p>
         <p id="result"></p>
         <p id="averageResult"></p>
+        <p id="errorCount"></p>
         
         <!-- Settings Section -->
         <div id="settings">
@@ -52,7 +53,7 @@
     </div>
 
     <script>
-        let startTime, responseTimes = [], repetitions = 10, count = 0;
+        let startTime, responseTimes = [], repetitions = 10, count = 0, errorCount = 0, isReady = false;
 
         // Buttons and event listeners
         document.getElementById('startBtn').addEventListener('click', startTest);
@@ -69,41 +70,52 @@
         function startTest() {
             count = 0;
             responseTimes = [];
+            errorCount = 0;
             document.getElementById('averageResult').textContent = '';
+            document.getElementById('errorCount').textContent = '';
             nextTrial();
         }
 
         function nextTrial() {
             if (count >= repetitions) {
-                displayAverage();
+                displayResults();
                 return;
             }
             count++;
             document.body.classList.remove('red-background');
             document.getElementById('display').style.visibility = 'hidden';
             document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
+            isReady = false;
 
-            // Wait a random time between 4000ms and 9000ms
-            const delay = Math.random() * 5000 + 4000;
+            // Wait a random time between 2000ms and 5000ms
+            const delay = Math.random() * 3000 + 2000;
             setTimeout(() => {
                 document.body.classList.add('red-background');
                 document.getElementById('display').style.visibility = 'visible';
                 startTime = performance.now();
+                isReady = true; // Now the "X" is ready, and the user can press Enter
             }, delay);
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && document.body.classList.contains('red-background')) {
-                const reactionTime = performance.now() - startTime;
-                responseTimes.push(reactionTime);
-                document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
-                nextTrial();
+            if (event.key === 'Enter') {
+                if (isReady) {
+                    const reactionTime = performance.now() - startTime;
+                    responseTimes.push(reactionTime);
+                    document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
+                    nextTrial();
+                } else {
+                    errorCount++;
+                    document.getElementById('result').textContent = "For tidlig! Vent til bakgrunnen er rød.";
+                    setTimeout(nextTrial, 5000); // Add 5 seconds delay for the next trial
+                }
             }
         });
 
-        function displayAverage() {
+        function displayResults() {
             const averageTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
             document.getElementById('averageResult').textContent = `Gjennomsnittlig respons tid: ${averageTime.toFixed(2)} ms`;
+            document.getElementById('errorCount').textContent = `Antall feiltrykk: ${errorCount}`;
             document.getElementById('display').style.visibility = 'hidden';
             document.body.classList.remove('red-background');
             document.getElementById('remaining').textContent = 'Test ferdig!';
