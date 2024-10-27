@@ -1,4 +1,4 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +7,7 @@
     <style>
         body, html {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -19,12 +20,16 @@
             visibility: hidden;
             color: black;
         }
-        #startBtn {
+        #startBtn, #settingsBtn {
             padding: 10px 20px;
             font-size: 20px;
+            margin: 10px;
         }
         .red-background {
             background-color: red;
+        }
+        #settings {
+            display: none;
         }
     </style>
 </head>
@@ -33,15 +38,33 @@
         <h1>Reaksjonstid Måling</h1>
         <div id="display">X</div>
         <button id="startBtn">Start</button>
+        <button id="settingsBtn">Innstillinger</button>
+        <p id="remaining"></p>
         <p id="result"></p>
         <p id="averageResult"></p>
+        
+        <!-- Settings Section -->
+        <div id="settings">
+            <label for="repetitions">Antall repetisjoner:</label>
+            <input type="number" id="repetitions" value="10" min="1">
+            <button id="saveSettingsBtn">Lagre Innstillinger</button>
+        </div>
     </div>
 
     <script>
         let startTime, responseTimes = [], repetitions = 10, count = 0;
 
-        // Start button functionality
+        // Buttons and event listeners
         document.getElementById('startBtn').addEventListener('click', startTest);
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            document.getElementById('settings').style.display = 'block';
+        });
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
+        function saveSettings() {
+            repetitions = parseInt(document.getElementById('repetitions').value) || 10;
+            document.getElementById('settings').style.display = 'none';
+        }
 
         function startTest() {
             count = 0;
@@ -58,9 +81,10 @@
             count++;
             document.body.classList.remove('red-background');
             document.getElementById('display').style.visibility = 'hidden';
+            document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
 
-            // Wait a random time between 500ms and 2000ms
-            const delay = Math.random() * 1500 + 500;
+            // Wait a random time between 1500ms and 3000ms
+            const delay = Math.random() * 1500 + 1500;
             setTimeout(() => {
                 document.body.classList.add('red-background');
                 document.getElementById('display').style.visibility = 'visible';
@@ -82,6 +106,7 @@
             document.getElementById('averageResult').textContent = `Gjennomsnittlig respons tid: ${averageTime.toFixed(2)} ms`;
             document.getElementById('display').style.visibility = 'hidden';
             document.body.classList.remove('red-background');
+            document.getElementById('remaining').textContent = 'Test ferdig!';
         }
     </script>
 </body>
