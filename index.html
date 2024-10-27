@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaksjonstid Måling - v0.3</title>
+    <title>Reaksjonstid Måling - v0.4</title>
     <style>
         body, html {
             display: flex;
@@ -14,9 +14,10 @@
             background-color: white;
             font-family: Arial, sans-serif;
             text-align: center;
+            margin: 0;
         }
         #version {
-            position: absolute;
+            position: fixed;
             top: 10px;
             right: 10px;
             font-size: 14px;
@@ -42,7 +43,7 @@
 </head>
 <body>
     <!-- Versjonsnummer -->
-    <div id="version">v0.3</div>
+    <div id="version">v0.4</div>
     
     <div id="app">
         <h1>Reaksjonstid Måling</h1>
@@ -97,27 +98,28 @@
             document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
             isReady = false;
 
-            // Wait a random time between 2000ms and 5000ms
+            // Vent en tilfeldig tid mellom 2000ms og 5000ms
             const delay = Math.random() * 3000 + 2000;
             setTimeout(() => {
                 document.body.classList.add('red-background');
                 document.getElementById('display').style.visibility = 'visible';
-                startTime = performance.now();
-                isReady = true; // Now the "X" is ready, and the user can press Enter
+                startTime = performance.now();  // Start timing her
+                isReady = true; // Nå kan brukeren trykke Enter
             }, delay);
         }
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 if (isReady) {
-                    const reactionTime = performance.now() - startTime;
+                    const reactionTime = performance.now() - startTime;  // Beregn korrekt reaksjonstid
                     responseTimes.push(reactionTime);
                     document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
+                    isReady = false;  // Tilbakestill for neste prøve
                     nextTrial();
                 } else {
                     errorCount++;
                     document.getElementById('result').textContent = "For tidlig! Vent til bakgrunnen er rød.";
-                    setTimeout(nextTrial, 5000); // Add 5 seconds delay for the next trial
+                    setTimeout(nextTrial, 5000); // Utsett neste visning med 5 sekunder
                 }
             }
         });
