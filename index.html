@@ -1,0 +1,88 @@
+	<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaksjonstid Måling</title>
+    <style>
+        body, html {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #display {
+            font-size: 100px;
+            visibility: hidden;
+            color: black;
+        }
+        #startBtn {
+            padding: 10px 20px;
+            font-size: 20px;
+        }
+        .red-background {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Reaksjonstid Måling</h1>
+        <div id="display">X</div>
+        <button id="startBtn">Start</button>
+        <p id="result"></p>
+        <p id="averageResult"></p>
+    </div>
+
+    <script>
+        let startTime, responseTimes = [], repetitions = 10, count = 0;
+
+        // Start button functionality
+        document.getElementById('startBtn').addEventListener('click', startTest);
+
+        function startTest() {
+            count = 0;
+            responseTimes = [];
+            document.getElementById('averageResult').textContent = '';
+            nextTrial();
+        }
+
+        function nextTrial() {
+            if (count >= repetitions) {
+                displayAverage();
+                return;
+            }
+            count++;
+            document.body.classList.remove('red-background');
+            document.getElementById('display').style.visibility = 'hidden';
+
+            // Wait a random time between 500ms and 2000ms
+            const delay = Math.random() * 1500 + 500;
+            setTimeout(() => {
+                document.body.classList.add('red-background');
+                document.getElementById('display').style.visibility = 'visible';
+                startTime = performance.now();
+            }, delay);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && document.body.classList.contains('red-background')) {
+                const reactionTime = performance.now() - startTime;
+                responseTimes.push(reactionTime);
+                document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
+                nextTrial();
+            }
+        });
+
+        function displayAverage() {
+            const averageTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+            document.getElementById('averageResult').textContent = `Gjennomsnittlig respons tid: ${averageTime.toFixed(2)} ms`;
+            document.getElementById('display').style.visibility = 'hidden';
+            document.body.classList.remove('red-background');
+        }
+    </script>
+</body>
+</html>
