@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaksjonstid Måling - v0.5</title>
+    <title>Reaksjonstid Måling - v0.6</title>
     <style>
         body, html {
             display: flex;
@@ -27,6 +27,7 @@
             font-size: 100px;
             visibility: hidden;
             color: black;
+            position: absolute;
         }
         #startBtn, #stopBtn, #settingsBtn {
             padding: 10px 20px;
@@ -43,7 +44,7 @@
 </head>
 <body>
     <!-- Versjonsnummer -->
-    <div id="version">v0.5</div>
+    <div id="version">v0.6</div>
     
     <div id="app">
         <h1>Reaksjonstid Måling</h1>
@@ -65,7 +66,7 @@
     </div>
 
     <script>
-        let startTime, responseTimes = [], repetitions = 10, count = 0, errorCount = 0, isReady = false, isRunning = false;
+        let startTime, responseTimes = [], repetitions = 10, count = 0, errorCount = 0, isReady = false, isRunning = false, correctKey;
 
         // Buttons and event listeners
         document.getElementById('startBtn').addEventListener('click', startTest);
@@ -115,26 +116,38 @@
             // Wait a random time between 2000ms and 5000ms
             const delay = Math.random() * 3000 + 2000;
             setTimeout(() => {
-                if (isRunning) {  // Ensure test hasn't been stopped
+                if (isRunning) {
+                    const displayElement = document.getElementById('display');
+
+                    // Randomize position of "X" (left or right) and assign correct key
+                    if (Math.random() > 0.5) {
+                        displayElement.style.left = '10%';
+                        correctKey = 'ShiftLeft';
+                    } else {
+                        displayElement.style.left = '80%';
+                        correctKey = 'ShiftRight';
+                    }
+
                     document.body.classList.add('red-background');
-                    document.getElementById('display').style.visibility = 'visible';
-                    startTime = performance.now();  // Start timing here
-                    isReady = true; // Now the "X" is ready, and the user can press Enter
+                    displayElement.style.visibility = 'visible';
+                    startTime = performance.now();
+                    isReady = true;
                 }
             }, delay);
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                if (isReady && isRunning) {
-                    const reactionTime = performance.now() - startTime;  // Correctly calculate reaction time
+            if (isReady && isRunning) {
+                if (event.code === correctKey) {
+                    const reactionTime = performance.now() - startTime;
                     responseTimes.push(reactionTime);
                     document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
-                    isReady = false;  // Reset for the next trial
+                    isReady = false;
                     nextTrial();
-                } else if (!isReady && isRunning) {
+                } else {
                     errorCount++;
-                    document.getElementById('result').textContent = "For tidlig! Vent til bakgrunnen er rød.";
+                    document.getElementById('result').textContent = "Feil tast! Prøv igjen.";
+                    isReady = false; // Reset for the next trial
                     setTimeout(nextTrial, 5000); // Add 5 seconds delay for the next trial
                 }
             }
@@ -143,7 +156,7 @@
         function displayResults() {
             const averageTime = responseTimes.length ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length : 0;
             document.getElementById('averageResult').textContent = `Gjennomsnittlig respons tid: ${averageTime.toFixed(2)} ms`;
-            document.getElementById('errorCount').textContent = `Antall feiltrykk: ${errorCount}`;
+            document.getElementById('errorCount').textContent = `Antall feiltastinger: ${errorCount}`;
             document.getElementById('display').style.visibility = 'hidden';
             document.body.classList.remove('red-background');
             document.getElementById('remaining').textContent = 'Test ferdig!';
