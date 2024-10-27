@@ -83,8 +83,8 @@
             document.getElementById('display').style.visibility = 'hidden';
             document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
 
-            // Wait a random time between 1500ms and 3000ms
-            const delay = Math.random() * 1500 + 1500;
+            // Wait a random time between 2000ms and 5000ms
+            const delay = Math.random() * 3000 + 2000;
             setTimeout(() => {
                 document.body.classList.add('red-background');
                 document.getElementById('display').style.visibility = 'visible';
