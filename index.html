@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reaksjonstid Måling - v0.6</title>
+    <title>Reaksjonstid Måling - v0.7</title>
     <style>
         body, html {
             display: flex;
@@ -34,17 +34,27 @@
             font-size: 20px;
             margin: 10px;
         }
-        .red-background {
-            background-color: red;
-        }
+        .green-background { background-color: green; }
+        .red-background { background-color: red; }
+        .yellow-background { background-color: yellow; }
         #settings {
             display: none;
         }
+        #logTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 80%;
+        }
+        #logTable th, #logTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        #logTable th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
     <!-- Versjonsnummer -->
-    <div id="version">v0.6</div>
+    <div id="version">v0.7</div>
     
     <div id="app">
         <h1>Reaksjonstid Måling</h1>
@@ -63,10 +73,24 @@
             <input type="number" id="repetitions" value="10" min="1">
             <button id="saveSettingsBtn">Lagre Innstillinger</button>
         </div>
+
+        <!-- Log Table -->
+        <table id="logTable">
+            <thead>
+                <tr>
+                    <th>Omgang</th>
+                    <th>Dato og tid</th>
+                    <th>Gjennomsnittlig reaksjonstid (ms)</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
 
     <script>
         let startTime, responseTimes = [], repetitions = 10, count = 0, errorCount = 0, isReady = false, isRunning = false, correctKey;
+        let roundCounter = 1;  // Teller omgangen for logging
 
         // Buttons and event listeners
         document.getElementById('startBtn').addEventListener('click', startTest);
@@ -90,13 +114,19 @@
             document.getElementById('errorCount').textContent = '';
             document.getElementById('stopBtn').style.display = 'inline-block';
             document.getElementById('startBtn').style.display = 'none';
+
+            // Deaktiver "Trege taster" (kun for Windows/Chrome)
+            if (window.navigator.userAgent.includes('Windows')) {
+                window.navigator.keyboard.lock(['ShiftLeft', 'ShiftRight']);
+            }
+
             nextTrial();
         }
 
         function stopTest() {
             isRunning = false;
             document.getElementById('display').style.visibility = 'hidden';
-            document.body.classList.remove('red-background');
+            document.body.className = '';
             document.getElementById('remaining').textContent = 'Test stoppet.';
             document.getElementById('startBtn').style.display = 'inline-block';
             document.getElementById('stopBtn').style.display = 'none';
@@ -107,19 +137,14 @@
                 displayResults();
                 return;
             }
-            count++;
-            document.body.classList.remove('red-background');
-            document.getElementById('display').style.visibility = 'hidden';
-            document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
-            isReady = false;
 
-            // Wait a random time between 2000ms and 5000ms
+            document.body.className = '';  // Fjern bakgrunnsfarger mellom runder
+            isReady = false;  // Ikke klar for input ennå
             const delay = Math.random() * 3000 + 2000;
+
             setTimeout(() => {
                 if (isRunning) {
                     const displayElement = document.getElementById('display');
-
-                    // Randomize position of "X" (left or right) and assign correct key
                     if (Math.random() > 0.5) {
                         displayElement.style.left = '10%';
                         correctKey = 'ShiftLeft';
@@ -127,8 +152,7 @@
                         displayElement.style.left = '80%';
                         correctKey = 'ShiftRight';
                     }
-
-                    document.body.classList.add('red-background');
+                    document.body.classList.add('green-background');
                     displayElement.style.visibility = 'visible';
                     startTime = performance.now();
                     isReady = true;
@@ -137,19 +161,33 @@
         }
 
         document.addEventListener('keydown', (event) => {
-            if (isReady && isRunning) {
+            if (isRunning && isReady) {
+                isReady = false;
+                const displayElement = document.getElementById('display');
+
                 if (event.code === correctKey) {
                     const reactionTime = performance.now() - startTime;
                     responseTimes.push(reactionTime);
                     document.getElementById('result').textContent = `Respons tid: ${reactionTime.toFixed(2)} ms`;
-                    isReady = false;
-                    nextTrial();
+                    document.body.className = 'green-background';
                 } else {
                     errorCount++;
-                    document.getElementById('result').textContent = "Feil tast! Prøv igjen.";
-                    isReady = false; // Reset for the next trial
-                    setTimeout(nextTrial, 5000); // Add 5 seconds delay for the next trial
+                    document.getElementById('result').textContent = "Feil tast!";
+                    document.body.className = 'red-background';
                 }
+
+                setTimeout(() => {
+                    displayElement.style.visibility = 'hidden';
+                    count++;
+                    document.getElementById('remaining').textContent = `Gjenstår: ${repetitions - count} klikk`;
+                    document.body.className = '';
+                    nextTrial();
+                }, 500);
+            } else if (!isReady && isRunning) {
+                errorCount++;
+                document.getElementById('result').textContent = "For tidlig!";
+                document.body.className = 'yellow-background';
+                setTimeout(() => { document.body.className = ''; nextTrial(); }, 500);
             }
         });
 
@@ -158,11 +196,17 @@
             document.getElementById('averageResult').textContent = `Gjennomsnittlig respons tid: ${averageTime.toFixed(2)} ms`;
             document.getElementById('errorCount').textContent = `Antall feiltastinger: ${errorCount}`;
             document.getElementById('display').style.visibility = 'hidden';
-            document.body.classList.remove('red-background');
             document.getElementById('remaining').textContent = 'Test ferdig!';
             document.getElementById('startBtn').style.display = 'inline-block';
             document.getElementById('stopBtn').style.display = 'none';
             isRunning = false;
+
+            // Logg resultatene
+            const logTable = document.getElementById('logTable').querySelector('tbody');
+            const row = document.createElement('tr');
+            const dateTime = new Date().toLocaleString();
+            row.innerHTML = `<td>${roundCounter++}</td><td>${dateTime}</td><td>${averageTime.toFixed(2)} ms</td>`;
+            logTable.appendChild(row);
         }
     </script>
 </body>
